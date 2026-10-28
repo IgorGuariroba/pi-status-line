@@ -1,6 +1,6 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { type Measure, type Painter, renderLine } from "./render.ts";
+import { calibrate, type Measure, type Painter, renderLine, tokensPerSecond } from "./render.ts";
 
 const measure: Measure = {
 	width: visibleWidth,
@@ -22,15 +22,35 @@ function sessionCost(ctx: ExtensionContext): number {
 	return cost;
 }
 
+/** User prompts on the current session branch (includes entries before compaction). */
+function sessionTurns(ctx: ExtensionContext): number {
+	let n = 0;
+	for (const e of ctx.sessionManager.getBranch() as any[]) {
+		if (e.type === "message" && e.message?.role === "user") n++;
+	}
+	return n;
+}
+
+/** Characters streamed in a delta event (text, thinking or tool-call arguments). */
+function deltaChars(ev: any): number {
+	return typeof ev?.delta === "string" ? ev.delta.length : 0;
+}
+
 export default function statusLine(pi: ExtensionAPI) {
 	let enabled = true;
 	let ctxRef: ExtensionContext | undefined;
 	let requestRender: (() => void) | undefined;
 	let running = false;
-	let turns = 0;
+	// Speed of the assistant message being streamed, and of the last finished one.
+	let stream: { firstDeltaAt?: number; chars: number } | undefined;
+	let liveTps: number | undefined;
+	let lastTps: number | undefined;
+	let lastSpeedRender = 0;
+	let charsPerToken = 4;
 	let dirty = false;
 	let dirtyTimer: ReturnType<typeof setTimeout> | undefined;
 	let costCache = { key: "", value: 0 };
+	let turnsCache = { key: "", value: 0 };
 
 	const rerender = () => requestRender?.();
 
@@ -62,6 +82,12 @@ export default function statusLine(pi: ExtensionAPI) {
 		return costCache.value;
 	};
 
+	const turns = (ctx: ExtensionContext) => {
+		const key = `${ctx.sessionManager.getSessionId()}:${ctx.sessionManager.getLeafId()}`;
+		if (turnsCache.key !== key) turnsCache = { key, value: sessionTurns(ctx) };
+		return turnsCache.value;
+	};
+
 	const install = (ctx: ExtensionContext) => {
 		if (!ctx.hasUI || ctx.mode !== "tui") return;
 		ctx.ui.setFooter((tui, theme, footerData) => {
@@ -85,6 +111,7 @@ export default function statusLine(pi: ExtensionAPI) {
 					const statuses = [...footerData.getExtensionStatuses().entries()]
 						.sort(([a], [b]) => a.localeCompare(b))
 						.map(([, text]) => text);
+					const usage = c.getContextUsage();
 					const line = renderLine(
 						{
 							cwd: c.cwd,
@@ -93,10 +120,13 @@ export default function statusLine(pi: ExtensionAPI) {
 							dirty,
 							model: c.model?.id,
 							thinking: c.model?.reasoning ? pi.getThinkingLevel() : undefined,
-							contextPercent: c.getContextUsage()?.percent ?? null,
+							contextTokens: usage ? usage.tokens : null,
+							contextWindow: usage?.contextWindow ?? c.model?.contextWindow ?? 0,
+							contextPercent: usage?.percent ?? null,
 							cost: cost(c),
 							running,
-							turns,
+							turns: turns(c),
+							tokensPerSecond: running ? (liveTps ?? lastTps) : lastTps,
 							extensionStatuses: statuses,
 						},
 						painter,
@@ -112,7 +142,9 @@ export default function statusLine(pi: ExtensionAPI) {
 	pi.on("session_start", async (_e, ctx) => {
 		ctxRef = ctx;
 		running = false;
-		turns = 0;
+		stream = undefined;
+		liveTps = undefined;
+		lastTps = undefined;
 		if (enabled) install(ctx);
 		refreshDirty(0);
 	});
@@ -120,7 +152,6 @@ export default function statusLine(pi: ExtensionAPI) {
 	pi.on("agent_start", async (_e, ctx) => {
 		ctxRef = ctx;
 		running = true;
-		turns++;
 		rerender();
 	});
 
@@ -128,6 +159,41 @@ export default function statusLine(pi: ExtensionAPI) {
 		ctxRef = ctx;
 		running = false;
 		refreshDirty(0);
+		rerender();
+	});
+
+	pi.on("message_start", async (e) => {
+		if ((e.message as any)?.role === "assistant") {
+			stream = { chars: 0 };
+			liveTps = undefined;
+		}
+	});
+
+	pi.on("message_update", async (e) => {
+		if (!stream) return;
+		const chars = deltaChars(e.assistantMessageEvent);
+		if (!chars) return;
+		const now = Date.now();
+		stream.firstDeltaAt ??= now;
+		stream.chars += chars;
+		// Chars-per-token learned from previous messages; refresh the footer at most every 500ms.
+		const est = tokensPerSecond(stream.chars / charsPerToken, now - stream.firstDeltaAt);
+		if (est !== undefined) liveTps = est;
+		if (now - lastSpeedRender >= 500) {
+			lastSpeedRender = now;
+			rerender();
+		}
+	});
+
+	pi.on("message_end", async (e) => {
+		const msg = e.message as any;
+		if (msg?.role !== "assistant" || !stream) return;
+		const output = msg.usage?.output ?? 0;
+		const exact = stream.firstDeltaAt ? tokensPerSecond(output, Date.now() - stream.firstDeltaAt) : undefined;
+		lastTps = exact ?? liveTps ?? lastTps;
+		charsPerToken = calibrate(charsPerToken, stream.chars, output);
+		liveTps = undefined;
+		stream = undefined;
 		rerender();
 	});
 
