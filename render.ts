@@ -65,9 +65,10 @@ export function contextColor(percent: number): Color {
 export function contextBar(percent: number | null, p: Painter, cells = 8): string {
 	if (percent === null || Number.isNaN(percent)) return p.fg("dim", "ctx ?");
 	const clamped = Math.max(0, Math.min(100, percent));
-	const filled = Math.round((clamped / 100) * cells);
+	// Any usage shows at least one cell, so the bar never looks empty while context is in use.
+	const filled = clamped > 0 ? Math.max(1, Math.round((clamped / 100) * cells)) : 0;
 	const color = contextColor(clamped);
-	const bar = p.fg(color, "▓".repeat(filled)) + p.fg("dim", "░".repeat(cells - filled));
+	const bar = p.fg(color, "█".repeat(filled)) + p.fg("dim", "░".repeat(cells - filled));
 	return `${p.fg("dim", "ctx")} ${bar} ${p.fg(color, `${Math.round(clamped)}%`)}`;
 }
 

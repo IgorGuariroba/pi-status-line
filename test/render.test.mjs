@@ -49,8 +49,10 @@ test("context colors follow 60/85 thresholds", () => {
 });
 
 test("contextBar renders 8 cells and unknown state", () => {
-	assert.equal(contextBar(50, plain), "ctx ▓▓▓▓░░░░ 50%");
+	assert.equal(contextBar(50, plain), "ctx ████░░░░ 50%");
 	assert.equal(contextBar(null, plain), "ctx ?");
+	assert.equal(contextBar(0, plain), "ctx ░░░░░░░░ 0%");
+	assert.equal(contextBar(6, plain), "ctx █░░░░░░░ 6%");
 	assert.match(contextBar(90, tagged), /<error>90%<\/error>/);
 });
 
@@ -62,7 +64,7 @@ test("formatCost hides zero", () => {
 
 test("full line", () => {
 	const line = renderLine(base, plain, measure, 200);
-	assert.equal(line, " ~/projetos/vetor-api  │  FRSN-1234 ●  │  opus-5-5 · high  │  ctx ▓▓▓▓░░░░ 48%  │  $0.84  │  ✓ turno 7");
+	assert.equal(line, " ~/projetos/vetor-api  │  FRSN-1234 ●  │  opus-5-5 · high  │  ctx ████░░░░ 48%  │  $0.84  │  ✓ turno 7");
 });
 
 test("running state and extension statuses", () => {
@@ -79,7 +81,7 @@ test("narrow width drops turn, cost, model in that order, keeps path/branch/cont
 	const full = renderLine(base, plain, measure, 200);
 	const w = measure.width(full);
 	assert.doesNotMatch(renderLine(base, plain, measure, w - 1), /turno/);
-	const essential = " ~/projetos/vetor-api  │  FRSN-1234 ●  │  ctx ▓▓▓▓░░░░ 48%";
+	const essential = " ~/projetos/vetor-api  │  FRSN-1234 ●  │  ctx ████░░░░ 48%";
 	assert.equal(renderLine(base, plain, measure, measure.width(essential)), essential);
 	const tiny = renderLine(base, plain, measure, 20);
 	assert.equal(measure.width(tiny), 20);
