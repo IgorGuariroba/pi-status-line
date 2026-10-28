@@ -2,16 +2,22 @@
 
 Status line compacta, em uma linha, para o [Pi Coding Agent](https://pi.dev). Substitui o footer padrão.
 
+![pi-status-line](docs/media/cover.png)
+
+<details><summary>Versão texto</summary>
+
 ```
  ~/projetos/vetor-api  │  FRSN-1234 ●  │  opus-5-5 · high  │  ctx ████░░░░ 480k/1M 48%  │  ✓ turno 7 · 62 tk/s
 ```
+
+</details>
 
 ## Instalação
 
 ```bash
 pi install npm:@igor-guari/pi-status-line
 # ou
-pi install git:github.com/IgorGuariroba/pi-status-line@v0.2.0
+pi install git:github.com/IgorGuariroba/pi-status-line@v0.2.1
 ```
 
 Para testar sem instalar: `pi -e npm:@igor-guari/pi-status-line`.

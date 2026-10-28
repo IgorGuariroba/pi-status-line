@@ -1,6 +1,6 @@
 {
   "name": "@igor-guari/pi-status-line",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Status line compacta para o Pi Coding Agent: pasta, branch com chave Jira e indicador de alterações, modelo/thinking, barra de contexto colorida, custo e estado do turno",
   "keywords": [
@@ -35,6 +35,7 @@
   "pi": {
     "extensions": [
       "./index.ts"
-    ]
+    ],
+    "image": "https://raw.githubusercontent.com/IgorGuariroba/pi-status-line/main/docs/media/cover.png"
   }
 }
