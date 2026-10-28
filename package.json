@@ -1,0 +1,40 @@
+{
+  "name": "@igor-guari/pi-status-line",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Status line compacta para o Pi Coding Agent: pasta, branch com chave Jira e indicador de alterações, modelo/thinking, barra de contexto colorida, custo e estado do turno",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "status-line",
+    "statusline",
+    "footer",
+    "jira",
+    "git"
+  ],
+  "author": "Igor Guariroba",
+  "license": "MIT",
+  "files": [
+    "index.ts",
+    "render.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IgorGuariroba/pi-status-line.git"
+  },
+  "homepage": "https://github.com/IgorGuariroba/pi-status-line#readme",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
