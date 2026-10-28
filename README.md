@@ -22,7 +22,7 @@ Para testar sem instalar: `pi -e npm:@igor-guari/pi-status-line`.
 |---|---|
 | **Pasta** | `~/...` quando cabe; senão só os 2 últimos segmentos |
 | **Branch** | Mostra a chave Jira extraída do nome (`feature/frsn-1234-x` → `FRSN-1234`); sem chave, mostra a branch. `●` amarelo = working tree com alterações |
-| **Modelo · thinking** | Modelo ativo e nível de raciocínio (omitido se o modelo não raciocina ou está `off`) |
+| **Modelo · thinking** | Modelo ativo, abreviado (`claude-opus-5-5` → `opus-5-5`, sem prefixo `vendor/`) e nível de raciocínio (omitido se o modelo não raciocina ou está `off`) |
 | **Contexto** | Barra de 8 blocos (`█░`), com ao menos 1 bloco quando há uso: verde < 60%, amarelo < 85%, vermelho acima |
 | **Custo** | Custo acumulado da sessão; some quando é zero (ex.: assinatura) |
 | **Turno** | `● rodando` durante a execução, `✓ turno N` quando ocioso |

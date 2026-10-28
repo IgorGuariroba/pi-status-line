@@ -56,6 +56,15 @@ export function issueKey(branch: string | null | undefined): string | undefined 
 	return undefined;
 }
 
+/** Compact model id: `claude-opus-5-5` → `opus-5-5`, `moonshotai/kimi-k2.6` → `kimi-k2.6`, drops date suffixes. */
+export function shortModel(id: string): string {
+	return id
+		.replace(/^.*\//, "")
+		.replace(/^claude-/, "")
+		.replace(/-\d{8}$/, "")
+		.replace(/-latest$/, "");
+}
+
 export function contextColor(percent: number): Color {
 	if (percent >= 85) return "error";
 	if (percent >= 60) return "warning";
@@ -101,7 +110,7 @@ export function buildSegments(s: StatusState, p: Painter): Segment[] {
 
 	if (s.model) {
 		const thinking = s.thinking && s.thinking !== "off" ? p.fg("muted", ` · ${s.thinking}`) : "";
-		segs.push({ text: `${p.fg("muted", s.model)}${thinking}`, dropPriority: 3 });
+		segs.push({ text: `${p.fg("muted", shortModel(s.model))}${thinking}`, dropPriority: 3 });
 	}
 
 	segs.push({ text: contextBar(s.contextPercent, p) });

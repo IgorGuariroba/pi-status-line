@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { contextBar, contextColor, formatCost, issueKey, renderLine, shortPath } from "../render.ts";
+import { contextBar, contextColor, formatCost, issueKey, renderLine, shortModel, shortPath } from "../render.ts";
 
 const plain = { fg: (_c, t) => t, bold: (t) => t };
 const tagged = { fg: (c, t) => `<${c}>${t}</${c}>`, bold: (t) => t };
@@ -14,7 +14,7 @@ const base = {
 	home: "/home/u",
 	branch: "feature/FRSN-1234-ajuste-filtro",
 	dirty: true,
-	model: "opus-5-5",
+	model: "claude-opus-5-5",
 	thinking: "high",
 	contextPercent: 48,
 	cost: 0.8421,
@@ -40,6 +40,13 @@ test("issueKey extracts Jira keys from branch names", () => {
 	assert.equal(issueKey("hotfix-12/GMUD-5"), "GMUD-5");
 	assert.equal(issueKey("main"), undefined);
 	assert.equal(issueKey(null), undefined);
+});
+
+test("shortModel drops vendor prefixes and date suffixes", () => {
+	assert.equal(shortModel("claude-opus-5-5"), "opus-5-5");
+	assert.equal(shortModel("moonshotai/kimi-k2.6"), "kimi-k2.6");
+	assert.equal(shortModel("claude-sonnet-4-20250514"), "sonnet-4");
+	assert.equal(shortModel("gpt-5"), "gpt-5");
 });
 
 test("context colors follow 60/85 thresholds", () => {
