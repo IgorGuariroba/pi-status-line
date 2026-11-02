@@ -1,0 +1,39 @@
+name: Dependabot auto-merge
+
+# pull_request_target roda com o token do repositório base. Por isso este workflow
+# NUNCA faz checkout nem executa código do PR: só lê metadados e habilita o auto-merge,
+# que só acontece depois que o check obrigatório "Tests (Node 24)" passar.
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  auto-merge:
+    if: >-
+      github.repository == 'IgorGuariroba/pi-status-line' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Habilitar auto-merge (segurança npm minor/patch)
+        if: >-
+          steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
+          steps.metadata.outputs.dependency-group == 'security-patch-minor' &&
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+           steps.metadata.outputs.update-type == 'version-update:semver-minor')
+        run: gh pr merge "$PR_URL" --auto --squash --match-head-commit "$HEAD_SHA"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
