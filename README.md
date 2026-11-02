@@ -49,6 +49,14 @@ npm test                         # testes de render.ts (Node 22+, sem dependênc
 pi -e ./index.ts                 # carrega a extensão local
 ```
 
+Depois de clonar, ative os hooks Git do projeto (bloqueiam commit e push diretos em `main`/`master`):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Para mudar as branches protegidas: `git config hooks.protectedBranches "main master release"`. Bypass consciente: `ALLOW_MAIN=1 git commit ...` / `ALLOW_MAIN=1 git push ...` (ou `--no-verify`).
+
 `render.ts` é puro (sem imports do pi) e concentra a montagem da linha; `index.ts` liga os eventos do pi, o `git status` e o `setFooter`.
 
 ## Licença
