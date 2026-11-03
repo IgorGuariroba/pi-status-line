@@ -1,11 +1,13 @@
 #!/bin/sh
-# Bloqueia push (inclusive delete e refspec src:main) para branches protegidas.
-# Branches: `git config hooks.protectedBranches "main master"` (padrão: main master).
-# Bypass consciente: ALLOW_MAIN=1 git push ...   (ou git push --no-verify)
+# 1. Bloqueia push (inclusive delete e refspec src:main) para branches protegidas.
+#    Branches: `git config hooks.protectedBranches "main master"` (padrão: main master).
+#    Bypass consciente: ALLOW_MAIN=1 git push ...
+# 2. Roda os testes (o mesmo `npm test` do CI).
+# Bypass de tudo: git push --no-verify
 
 remote_name="$1"
 
-protected=$(git config --get hooks.protectedBranches)
+protected=$(git config --get hooks.protectedBranches | tr ',' ' ')
 [ -n "$protected" ] || protected="main master"
 
 status=0
@@ -23,4 +25,12 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     fi
   done
 done
-exit $status
+[ "$status" -eq 0 ] || exit "$status"
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+[ -f package.json ] || exit 0
+npm test --silent || {
+  echo "✖ Testes falharam; push bloqueado (bypass: git push --no-verify)." >&2
+  exit 1
+}
+exit 0
